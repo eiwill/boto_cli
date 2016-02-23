@@ -1,13 +1,13 @@
 Boto3 command line interface
 ============================
 
-`--id` -- friendly authorization name.
-`--put/--get/--delete` -- command name.
-`--bucket(-b)` -- bucket name.
-`--key(-k)` -- key name.
-`--file(-f)` -- path to file.
-`--data(-d)` -- string.
-`--address(-a)` -- service address (http://<host>:<port>).
+- `--id` -- friendly authorization name.
+- `--put/--get/--delete` -- command name.
+- `--bucket(-b)` -- bucket name.
+- `--key(-k)` -- key name.
+- `--file(-f)` -- path to file.
+- `--data(-d)` -- string.
+- `--address(-a)` -- custom service address (http://host:port).
 
 Examples:
 
