@@ -4,6 +4,7 @@ import sys
 import boto3
 import yaml
 import logging
+import json
 
 from botocore.utils import fix_s3_host
 
@@ -11,6 +12,10 @@ from botocore.utils import fix_s3_host
 def run():
 
     def print_bucket(Bucket):
+        """
+        Prints bucket contents
+        :param Bucket: name to search
+        """
         session = create_session()
 
         bucket = session.Bucket(Bucket)
@@ -22,10 +27,54 @@ def run():
             print(obj.key)
 
     def print_object(Bucket, Key):
+        """
+        Prints object data
+        :param Bucket: bucket name
+        :param Key: object key
+        """
         session = create_session()
         obj = session.Object(Bucket, Key)
         info = obj.get()
         print("Data %s" % info["Body"].read())
+
+    def print_buckets():
+        """
+        Print all buckets for user
+        """
+        session = create_session()
+        for bucket in session.buckets.all():
+            print("Name\t%s\tTime of creation\t%s" % (bucket.name, bucket.creation_date))
+
+    def get_bucket_acl(**kwargs):
+        """
+        Prints bucket acl
+        :param Bucket: bucket name
+        """
+        session = create_session()
+        obj = session.meta.client.get_bucket_acl(**kwargs)
+        print("ACL:\n%s" % json.dumps(obj, indent=4))
+
+    def get_object_acl(**kwargs):
+        """
+        Prints object acl
+        :param Bucket: bucket name
+        :param Key: object key
+        """
+        session = create_session()
+        obj = session.meta.client.get_object_acl(**kwargs)
+        print("ACL:\n%s" % json.dumps(obj, indent=4))
+
+    def show_help(command_name):
+        callback = None
+        session = create_session()
+        for act in actions:
+            if isinstance(act, tuple):
+                act, callback = act
+            else:
+                callback = getattr(session.meta.client, act)
+            if act == command_name:
+                break
+        help(callback)
 
     actions = [
         "create_bucket",
@@ -35,8 +84,13 @@ def run():
         "delete_bucket",
         "delete_object",
         "download_file",
+        "put_bucket_acl",
+        "put_object_acl",
         ("print_bucket", print_bucket),
         ("print_object", print_object),
+        ("print_buckets", print_buckets),
+        ("get_bucket_acl", get_bucket_acl),
+        ("get_object_acl", get_object_acl),
     ]
 
     def create_arg_parser():
@@ -50,8 +104,10 @@ def run():
                 action, _ = action
             group.add_argument("--" + action, dest=action, help="command name", nargs="*")
 
+        group.add_argument("--show_help", dest="help", help="show help for command" )
         parser.add_argument("-a", "--address", dest="address", help="service address (<host>:<port>)")
         parser.add_argument("-v", "--verbose", dest="verbose", help="verbose logging", action="store_true")
+        parser.add_argument("-r", "--region", dest="region", help="region name")
         return parser
 
     def create_session():
@@ -65,9 +121,13 @@ def run():
             sys.exit("Error: Invalid id")
 
         # Create session
+        kwargs = {}
+        if options.region:
+            kwargs["region_name"] = options.region
         s = boto3.Session(
             aws_access_key_id=creds["id"],
             aws_secret_access_key=creds["key"],
+            **kwargs
         )
 
         kwargs = {}
@@ -92,6 +152,10 @@ def run():
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
         root.addHandler(ch)
+
+    if options.help:
+        show_help(options.help)
+        sys.exit(0)
 
     for key in actions:
         callback = None

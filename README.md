@@ -18,13 +18,27 @@ Boto3 command line interface
                         command name
   --download_file [DOWNLOAD_FILE [DOWNLOAD_FILE ...]]
                         command name
+  --put_bucket_acl [PUT_BUCKET_ACL [PUT_BUCKET_ACL ...]]
+                        command name
+  --put_object_acl [PUT_OBJECT_ACL [PUT_OBJECT_ACL ...]]
+                        command name
   --print_bucket [PRINT_BUCKET [PRINT_BUCKET ...]]
                         command name
   --print_object [PRINT_OBJECT [PRINT_OBJECT ...]]
                         command name
+  --print_buckets [PRINT_BUCKETS [PRINT_BUCKETS ...]]
+                        command name
+  --get_bucket_acl [GET_BUCKET_ACL [GET_BUCKET_ACL ...]]
+                        command name
+  --get_object_acl [GET_OBJECT_ACL [GET_OBJECT_ACL ...]]
+                        command name
+  --show_help HELP      show help for command
   -a ADDRESS, --address ADDRESS
                         service address (<host>:<port>)
   -v, --verbose         verbose logging
+  -r REGION, --region REGION
+                        region name
+
 ```
 
 Examples:
