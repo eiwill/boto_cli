@@ -57,7 +57,11 @@ Create bucket:
 ./boto_cli.py --id user1 -v --create_bucket Bucket=123434 ACL=public-read
 ```
 
+Dictionary as a parameter can be defined like this:
 
+```
+CreateBucketConfiguration='{"LocationConstraint": "EU"}'
+```
 
 Credentials should be in .credentials.yaml in the same folder, where ./boto_cli.py lies:
 

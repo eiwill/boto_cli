@@ -168,7 +168,11 @@ def run():
             for param in params:
                 value = param.split("=")
                 if len(value) == 2:
-                    kwargs[value[0]] = value[1]
+                    try:
+                        v = json.loads(value[1])
+                    except:
+                        v = value[1]
+                    kwargs[value[0]] = v
                 else:
                     sys.exit("Failed to parse parameter %s" % param)
 
