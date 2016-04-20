@@ -11,7 +11,7 @@ from botocore.utils import fix_s3_host
 
 def run():
 
-    def print_bucket(Bucket):
+    def print_bucket(Bucket, Limit=-1):
         """
         Prints bucket contents
         :param Bucket: name to search
@@ -23,8 +23,13 @@ def run():
         object_summary_iterator = bucket.objects.all()
 
         print("Bucket %s keys:" % Bucket)
+        count = 0
         for obj in object_summary_iterator:
             print(obj.key)
+            count += 1
+            if Limit != -1 and count > int(Limit):
+                break
+        print("Count %s" % count)
 
     def print_object(Bucket, Key):
         """
@@ -37,13 +42,15 @@ def run():
         info = obj.get()
         print("Data %s" % info["Body"].read())
 
-    def print_buckets():
-        """
-        Print all buckets for user
-        """
+    def print_buckets(Prefix=None):
         session = create_session()
-        for bucket in session.buckets.all():
-            print("Name\t%s\tTime of creation\t%s" % (bucket.name, bucket.creation_date))
+        print("Buckets:")
+        if Prefix:
+            buckets = session.buckets.filter(Prefix=Prefix)
+        else:
+            buckets = session.buckets.all()
+        for bucket in buckets:
+            print("%s, %s" % (bucket.name, str(bucket.creation_date)))
 
     def get_bucket_acl(**kwargs):
         """
