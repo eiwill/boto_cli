@@ -6,7 +6,11 @@ import yaml
 import logging
 import json
 
+import hashlib
+
+from base64 import standard_b64encode
 from botocore.utils import fix_s3_host
+from botocore.client import Config
 
 
 def run():
@@ -41,6 +45,7 @@ def run():
         obj = session.Object(Bucket, Key)
         info = obj.get()
         print("Data %s" % info["Body"].read())
+        print("Details %r, %r" % (info, vars(obj)))
 
     def print_buckets(Prefix=None):
         session = create_session()
@@ -71,6 +76,36 @@ def run():
         obj = session.meta.client.get_object_acl(**kwargs)
         print("ACL:\n%s" % json.dumps(obj, indent=4))
 
+    def get_bucket_location(**kwargs):
+        """
+        Print bucket location
+        :param Bucket: bucket name
+        """
+        session = create_session()
+        location = session.meta.client.get_bucket_location(**kwargs)
+        print("Location: \n%s" % json.dumps(location, indent=4))
+
+    def generate_presigned_url(**kwargs):
+        session = create_session()
+        url = session.meta.client.generate_presigned_url(**kwargs)
+        print("URL: %s" % url)
+
+    def generate_presigned_post(**kwargs):
+        session = create_session()
+        res = session.meta.client.generate_presigned_post(**kwargs)
+        print("PARAMS:\n%s" % json.dumps(res, indent=4))
+
+    def put_ssec(sse_c_key, sse_c_algo, **kwargs):
+        sse_c_key_b64 = standard_b64encode(sse_c_key)
+        sse_c_key_md5_b64 = standard_b64encode(
+            hashlib.md5(sse_c_key).hexdigest().decode("hex"))
+
+        session = create_session()
+        obj, res = session.meta.client.put_object(
+            SSECustomerKey=sse_c_key_b64,
+            SSECustomerKeyMD5=sse_c_key_md5_b64,
+            SSECustomerAlgorithm=sse_c_algo, **kwargs)
+
     def show_help(command_name):
         callback = None
         session = create_session()
@@ -98,6 +133,10 @@ def run():
         ("print_buckets", print_buckets),
         ("get_bucket_acl", get_bucket_acl),
         ("get_object_acl", get_object_acl),
+        ("get_bucket_location", get_bucket_location),
+        ("generate_presigned_url", generate_presigned_url),
+        ("generate_presigned_post", generate_presigned_post),
+        ("put_ssec", put_ssec),
     ]
 
     def create_arg_parser():
@@ -111,10 +150,11 @@ def run():
                 action, _ = action
             group.add_argument("--" + action, dest=action, help="command name", nargs="*")
 
-        group.add_argument("--show_help", dest="help", help="show help for command" )
+        group.add_argument("--show_help", dest="help", help="show help for command")
         parser.add_argument("-a", "--address", dest="address", help="service address (<host>:<port>)")
         parser.add_argument("-v", "--verbose", dest="verbose", help="verbose logging", action="store_true")
         parser.add_argument("-r", "--region", dest="region", help="region name")
+        parser.add_argument("-sv", "--signature-version", dest="signature_version", help="s3 signature version")
         return parser
 
     def create_session():
@@ -138,6 +178,8 @@ def run():
         )
 
         kwargs = {}
+        if options.signature_version:
+            kwargs["config"] = Config(signature_version=options.signature_version, region_name=options.region)
         if options.address:
             kwargs["endpoint_url"] = options.address
         s3 = s.resource('s3', **kwargs)
@@ -179,7 +221,7 @@ def run():
                         v = json.loads(value[1])
                     except:
                         v = value[1]
-                    kwargs[value[0]] = v
+                    kwargs[value[0]] = str(v)
                 else:
                     sys.exit("Failed to parse parameter %s" % param)
 
